@@ -1,57 +1,17 @@
-const app = new SVG().addTo('body').size(800, 600);
-app.viewbox(0, 0, 800, 600);
-app.rect(800, 600).fill('#1F1F1F');
-
-/*
-function recSizeChange(cont) {
-    for (let item of cont.children) {
-        if (item.isSprite) {
-            item.scale.x /= 1.4;
-            item.scale.y /= 1.4;
-        } else {
-            recSizeChange(item)
-        }
-    }
-}
-
-function Division(a, b, cont) {
-    b.y += a.height;
-    let line = new PIXI.Graphics();
-    line.lineStyle(6, 0xCCCCCC, 1);
-    line.moveTo(0, 0);
-    line.lineTo(Math.max(a.width, b.width), 0);
-    line.interactive = true;
-    line.buttonMode = true;
-    line.hitArea = new PIXI.Polygon([
-        line.x, line.y - line.height * 2,
-        line.x + line.width, line.y - line.height * 2,
-        line.x + line.width, line.y + line.height * 2,
-        line.x, line.y + line.height * 2,
-    ]);
-    line.y += a.height;
-    line
-        .on('pointerdown', (event) => onButtonDown(cont))
-        .on('pointerup', (event) => onButtonOver(cont))
-        .on('pointerover', (event) => onButtonOver(cont))
-        .on('pointerout', (event) => onButtonOut(cont));
-    a.x += (line.width - a.width) / 2;
-    b.x += (line.width - b.width) / 2;
-    cont.addChild(a);
-    cont.addChild(b);
-    cont.addChild(line);
-    cont.scale.x /= 1.4;
-    cont.scale.y /= 1.4;
-    cont.y -= cont.height / 2 - a.height / 2;
-}
-*/
+const app = new SVG().addTo('body').size(1000, 800);
+app.viewbox(0, 0, 1000, 800);
+app.rect(1000, 800).fill('#1F1F1F');
+const chr_size = [110.8125, 78.421875, 55.21875];
 
 function MakeNode(node) {
     this.value = node.value;
+    //this.size = 0;
+    //this.type = node.nodeType;
     this.children = [];
     this.add = function(child_node) {
         this.children.push(child_node);
     }
-    this.cont = app.nested();
+    this.cont = app.group();
     this.twfNode = node;
 }
 
@@ -63,13 +23,14 @@ function MakeTree(node) {
     return cur_node;
 }
 
-function interactive_text(value, cont) {
-    let tmp = cont.nested().text(value).font({
-        size: 100,
+function interactive_text(value, cont, size) {
+    let tmp = cont.group().text(value).font({
+        size: 100 * (size === 0) + 71 * (size === 1) + 50 * (size >= 2),
         family: 'u2000',
         fill: '#CCCCCC'
     });
     tmp.css('cursor', 'pointer');
+    tmp.leading(0.9);
     tmp
         .on('mousedown', (event) => onButtonDown(cont))
         .on('mouseup mouseover', (event) => onButtonOver(cont))
@@ -77,52 +38,91 @@ function interactive_text(value, cont) {
     return tmp;
 }
 
-let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("+(A;*(B;C))");
+let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("+(X;/(X;/(X;/(X;/(X;/(X;/(X;/(X;/(X;X)))))))))");
 
 let TreeRoot = MakeTree(NewTreeRoot.children.toArray()[0]);
 
-function PrintTree(v) {
+function Division(a, b, cont, size) {
+    cont.add(a);
+    cont.add(b);
+    let width = Math.max(a.bbox().width, b.bbox().width) + 30;
+    let height = 5 * (size === 1) + 4 * (size === 2) + 3 * (size >= 3);
+    let line = cont.group().rect(width, height)
+                            .fill('#CCCCCC')
+                            .move(a.bbox().x, a.bbox().y);
+    line.css('cursor', 'pointer');
+    line
+        .on('mousedown', (event) => onButtonDown(cont))
+        .on('mouseup mouseover', (event) => onButtonOver(cont))
+        .on('mouseout', (event) => onButtonOut(cont));
+    line.dy(a.bbox().height);
+    b.y(a.bbox().y + a.bbox().height + line.height());
+    a.dx((line.width() - a.bbox().width) / 2);
+    b.dx((line.width() - b.bbox().width) / 2);
+    return a.bbox().height + line.height() / 3;
+}
+
+function PrintTree(v, size) {
+    let vert_shift = 0;
     let delta = 0;
     let cur_cont = v.cont;
     if (v.value === "/") {
-        Division(PrintTree(v.children[0]), PrintTree(v.children[1]), cur_cont);
+        vert_shift = -Division(PrintTree(v.children[0], size + 1)[0], PrintTree(v.children[1], size + 1)[0], cur_cont, size + 1);
     } else if (v.children.length > 1) {
-        let first_child = PrintTree(v.children[0]);
+        let [first_child, cur_shift] = PrintTree(v.children[0], size);
         cur_cont.add(first_child);
+        first_child.dy(cur_shift + (chr_size[0] / 2 * (size === 0) +
+                                    chr_size[1] / 2 * (size === 1) +
+                                    chr_size[2] / 2 * (size >= 2)) * (cur_shift !== 0));
         delta += first_child.bbox().width;
         for (let i = 1; i < v.children.length; i++) {
-            let tmp = interactive_text(v.value, v.cont);
+            let tmp = interactive_text(v.value, v.cont, size);
             tmp.dx(delta);
             cur_cont.add(tmp);
             delta += tmp.bbox().width;
-            tmp = PrintTree(v.children[i]);
-            tmp.dx(delta);
-            cur_cont.add(tmp);
-            delta += tmp.bbox().width;
+            let [another_child, cur_shift] = PrintTree(v.children[i], size);
+            another_child.dx(delta);
+            another_child.dy(cur_shift + (chr_size[0] / 2 * (size === 0) +
+                                          chr_size[1] / 2 * (size === 1) +
+                                          chr_size[2] / 2 * (size >= 2)) * (cur_shift !== 0));
+            cur_cont.add(another_child);
+            delta += another_child.bbox().width;
+            cur_shift = 0;
         }
     } else if (v.children.length === 1) {
-        let tmp = interactive_text(v.value + '(', v.cont);
+        let tmp = interactive_text(v.value + '(', v.cont, size);
         tmp.dx(delta);
         cur_cont.add(tmp);
         delta += tmp.bbox().width;
-        tmp = PrintTree(v.children[0]);
-        tmp.dx(delta);
-        cur_cont.add(tmp);
-        delta += tmp.bbox().width;
-        tmp = interactive_text(')', v.cont);
+        let [child, cur_shift] = PrintTree(v.children[0], size);
+        child.dx(delta);
+        child.dy(cur_shift + (chr_size[0] / 2 * (size === 0) +
+                              chr_size[1] / 2 * (size === 1) +
+                              chr_size[2] / 2 * (size >= 2)) * (cur_shift !== 0));
+        cur_cont.add(child);
+        delta += child.bbox().width;
+        tmp = interactive_text(')', v.cont, size);
         tmp.dx(delta);
         cur_cont.add(tmp);
     } else {
-        let tmp = interactive_text(v.value, v.cont);
-        cur_cont.add(tmp);
+        let variable = interactive_text(v.value, v.cont, size);
+        cur_cont.add(variable);
     }
-    return cur_cont;
+    return [cur_cont, vert_shift];
 }
 
-let expr = PrintTree(TreeRoot);
-expr.x(100);
-expr.y(100);
+let expr = PrintTree(TreeRoot, 0)[0];
+expr.move(100, 100);
 
+/*
+let cont = app.group();
+let cont1 = cont.group();
+let cont2 = cont1.group();
+let txt = interactive_text('Test', cont2, 0);
+cont1.dmove(100, 100);
+cont2.dy(-50);
+txt.dy(-50);
+*/
 function onButtonDown(con) {
     con.fill('#00FFFF');
     for (let item of con.children()) {
