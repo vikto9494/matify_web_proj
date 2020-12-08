@@ -36,7 +36,7 @@ function interactive_text(value, cont, size) {
     return txt;
 }
 
-let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("^(^(/(/(/(/(X;X);/(X;/(X;X)));X);/(X;X));^(X;^(X;X)));^(X;^(X;X)))");
+let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("*(C(n;+(k;-(1)));C(n;/(k;2)))");
 
 let TreeRoot = MakeTree(NewTreeRoot.children.toArray()[0]);
 
@@ -133,8 +133,8 @@ function PrintTree(v, size) {
         [another_child, another_shift] = PrintTree(v.children[1], size);
         vert_shift = Math.min(another_shift, vert_shift);
         delta += v_draw(cur_cont, first_child, delta, first_shift, size) + 3;
-        first_child.y(tmp.y() + tmp.bbox().height - chr_size[0] / 2 * (size === 0)
-                                                  - chr_size[1] / 2 * (size === 1)
+        first_child.y(tmp.y() + tmp.bbox().height - chr_size[0] / 2   * (size === 0)
+                                                  - chr_size[1] / 2   * (size === 1)
                                                   - chr_size[2] / 1.3 * (size >=  2));
         if (v.children[1].children.length > 0) {
             tmp = interactive_text("(", another_child, size);
@@ -145,6 +145,28 @@ function PrintTree(v, size) {
         } else {
             v_draw(cur_cont, another_child, delta, another_shift, size);
         }
+
+    } else if ((v.value === "C" ||
+                v.value === "A" ||
+                v.value === "V" ||
+                v.value === "U") && v.children.length === 2) {
+        let first_child, another_child, first_shift, another_shift, tmp;
+        tmp = interactive_text(v.value, cur_cont, size);
+        delta += draw(cur_cont, tmp, delta) + 3;
+        [first_child, first_shift] = PrintTree(v.children[0], size + 1);
+        [another_child, another_shift] = PrintTree(v.children[1], size + 1);
+        v_draw(cur_cont, first_child, delta, first_shift, size);
+        first_child.y(tmp.y() + tmp.bbox().height - chr_size[0] / 2 * (size === 0)
+                                                  - chr_size[1] / 2 * (size === 1)
+                                                  - chr_size[2] / 2 * (size >= 2));
+        v_draw(cur_cont, another_child, delta, another_shift, size);
+        another_child.y(tmp.y() - chr_size[0] * 0.2 * (size === 0)
+                                - chr_size[1] * 0.2 * (size === 1)
+                                - chr_size[2] * 0.2 * (size >= 2));
+        if (another_child.y() + another_child.bbox().height > first_child.y()) {
+            another_child.dy(-another_child.y() - another_child.bbox().height + first_child.y());
+        }
+        vert_shift += cur_cont.bbox().y - tmp.bbox().y;
 
     } else if (v.value === "-") {
         let child, cur_shift, tmp;
