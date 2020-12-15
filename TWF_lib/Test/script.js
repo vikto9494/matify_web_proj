@@ -1,15 +1,16 @@
 const app = new PIXI.Application({
     backgroundColor: 0x1F1F1F,
-    width : 1000
+    width: 800,
+    height: 600
 });
 document.body.appendChild(app.view);
 
 const style = new PIXI.TextStyle({
     fontFamily: 'u2000',
-    fontSize: 10,
+    fontSize: 100,
     fill: 0xCCCCCC
 });
-
+/*
 function Division(a, b, cont) {
     b.y += a.height;
     let line = new PIXI.Graphics();
@@ -38,7 +39,7 @@ function Division(a, b, cont) {
     cont.scale.x /= 2;
     cont.scale.y /= 2;
 }
-
+*/
 function MakeNode(node) {
     this.value = node.value;
     this.children = [];
@@ -69,7 +70,7 @@ function interactive_text(value, cont) {
     return tmp;
 }
 
-let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("A");
+let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("+(A;*(B;C))");
 
 let TreeRoot = MakeTree(NewTreeRoot.children.toArray()[0]);
 
@@ -112,7 +113,7 @@ function PrintTree(v) {
 }
 
 let expr = PrintTree(TreeRoot);
-expr.position.set(300, 100);
+expr.position.set(100, 100);
 
 app.stage.addChild(expr);
 

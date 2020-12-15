@@ -1,7 +1,31 @@
-const app = new SVG().addTo('body').size(1000, 800);
-app.viewbox(0, 0, 1000, 800);
-app.rect(1000, 800).fill('#1F1F1F');
-const chr_size = [110.8125, 78.421875, 55.21875];
+const background_colour = '#1F1F1F';
+const default_text_colour = '#CCCCCC';
+const mouse_over_text_colour = '#AAAAAA';
+const mouse_down_text_colour = '#00FFFF';
+const test_expr_x = 100;
+const test_expr_y = 100;
+const inter_letter_interval = 3;
+const font_size = [100, 71, 50];
+const init_chr_size = 110.8125;
+const chr_size = [init_chr_size, init_chr_size / Math.sqrt(2), init_chr_size / 2];
+const max_size = 2;
+const line_height = [5, 4, 3];
+const line_elongation = 30;
+const default_vert_shift_offset = [chr_size[0] / 2, chr_size[1] / 2, chr_size[2] / 2];
+const pow_vert_offset = chr_size[2] / 5;
+const pow_hitbox_width = [chr_size[1] / 2.5, chr_size[2] / 2.5];
+const pow_hitbox_height = [chr_size[1] / 2, chr_size[2] / 2];
+const pow_hitbox_vert_offset = [chr_size[1] / 8, chr_size[2] / 8];
+const log_sub_index_vert_offset = [chr_size[0] / 2, chr_size[1] / 2, chr_size[2] / 1.3];
+const combi_top_index_vert_offset = [chr_size[0] / 5, chr_size[1] / 5, chr_size[2] / 4];
+const background_width = 1000;
+const background_height = 800;
+const test_string = "+(^(A;log(A;B));-(^(C;log(C;B))))";
+
+const app = new SVG().addTo('body').size(background_width, background_height);
+app.viewbox(0, 0, background_width, background_height);
+
+app.rect(background_width, background_height).fill(background_colour);
 
 function MakeNode(node) {
     this.value = node.value;
@@ -23,49 +47,45 @@ function MakeTree(node) {
 
 function interactive_text(value, cont, size) {
     let txt = cont.group().text(value).font({
-        size: 100 * (size === 0) + 71 * (size === 1) + 50 * (size >= 2),
+        size: font_size[Math.min(size, max_size)],
         family: 'u2000',
-        fill: '#CCCCCC'
+        fill: default_text_colour
     });
     txt.css('cursor', 'pointer');
     txt.leading(0.9);
     txt
-        .on('mousedown', (event) => onButtonDown(cont))
-        .on('mouseup mouseover', (event) => onButtonOver(cont))
-        .on('mouseout', (event) => onButtonOut(cont));
+        .on('mousedown', () => onButtonDown(cont))
+        .on('mouseup mouseover', () => onButtonOver(cont))
+        .on('mouseout', () => onButtonOut(cont));
     return txt;
 }
 
-let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$("*(C(n;+(k;-(1)));C(n;/(k;2)))");
+let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$(test_string);
 
 let TreeRoot = MakeTree(NewTreeRoot.children.toArray()[0]);
 
 function Division(a, b, cont, size) {
     cont.add(a);
     cont.add(b);
-    let width = Math.max(a.bbox().width, b.bbox().width) + 30;
-    let height = 5 * (size === 1) +
-                 4 * (size === 2) +
-                 3 * (size >=  3);
+    let width = Math.max(a.bbox().width, b.bbox().width) + line_elongation;
+    let height = line_height[Math.min(size - 1, max_size)];
     let line = cont.group().rect(width, height)
-                            .fill('#CCCCCC')
+                            .fill(default_text_colour)
                             .move(a.bbox().x, a.bbox().y);
     line.css('cursor', 'pointer');
     line
-        .on('mousedown', (event) => onButtonDown(cont))
-        .on('mouseup mouseover', (event) => onButtonOver(cont))
-        .on('mouseout', (event) => onButtonOut(cont));
+        .on('mousedown', () => onButtonDown(cont))
+        .on('mouseup mouseover', () => onButtonOver(cont))
+        .on('mouseout', () => onButtonOut(cont));
     line.dy(a.bbox().height);
     b.y(a.bbox().y + a.bbox().height + line.height());
     a.dx((line.width() - a.bbox().width) / 2);
     b.dx((line.width() - b.bbox().width) / 2);
-    return a.bbox().height + line.height() / 3;
+    return a.bbox().height + line.height() / 3;             //recommended vertical shift to keep the fraction centered
 }
 
 function calculate_vert_shift(shift, size) {
-    return (shift +  chr_size[0] / 2 * (size === 0) +
-                     chr_size[1] / 2 * (size === 1) +
-                     chr_size[2] / 2 * (size >=  2));
+    return shift + default_vert_shift_offset[Math.min(size, max_size)];
 }
 
 function draw(cont, child, del) {
@@ -81,10 +101,17 @@ function v_draw(cont, child, del, vert, size) {
     return child.bbox().width;
 }
 
+function draw_with_brackets(cont, child, delta, shift, size) {
+    let tmp = interactive_text("(", child, size);
+    delta += draw(cont, tmp, delta) + inter_letter_interval;
+    delta += v_draw(cont, child, delta, shift, size) + inter_letter_interval;
+    tmp = interactive_text(")", child, size);
+    delta += draw(cont, tmp, delta) + inter_letter_interval;
+    return delta;
+}
+
 function PrintTree(v, size) {
-    let vert_shift = - chr_size[0] / 2 * (size === 0)
-                     - chr_size[1] / 2 * (size === 1)
-                     - chr_size[2] / 2 * (size >=  2);
+    let vert_shift = -default_vert_shift_offset[Math.min(size, max_size)];
     let delta = 0;
     let cur_cont = v.cont;
 
@@ -94,54 +121,41 @@ function PrintTree(v, size) {
             cur_cont, size + 1);
 
     } else if (v.value === "^") {
-        let first_child, another_child, first_shift, another_shift, tmp;
+        let first_child, another_child, first_shift, another_shift;
         [first_child, first_shift] = PrintTree(v.children[0], size);
         [another_child, another_shift] = PrintTree(v.children[1], size + 1);
         if (v.children[0].children.length > 0) {
-            tmp = interactive_text("(", first_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
-            delta += v_draw(cur_cont, first_child, delta, first_shift, size) + 3;
-            tmp = interactive_text(")", first_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
+            delta = draw_with_brackets(cur_cont, first_child, delta, first_shift, size);
         } else {
-            delta += v_draw(cur_cont, first_child, delta, first_shift, size) + 3;
+            delta += v_draw(cur_cont, first_child, delta, first_shift, size) + inter_letter_interval;
         }
         v_draw(cur_cont, another_child, delta, another_shift, size + 1);
-        another_child.y(first_child.y() - first_shift - another_child.bbox().height + chr_size[2] * 0.2 * (size >=  2));
+        another_child.y(first_child.y() - first_shift - another_child.bbox().height + pow_vert_offset * (size >=  2));
         let rect = cur_cont.group()
-            .rect(chr_size[1] / 2.5 * (size === 0) +
-                  chr_size[2] / 2.5 * (size >=  1),
-                  chr_size[1] / 2   * (size === 0) +
-                  chr_size[2] / 2   * (size >=  1))
+            .rect(pow_hitbox_width[Math.min(size, max_size - 1)],
+                  pow_hitbox_height[Math.min(size, max_size - 1)])
             .move(another_child.bbox().x, another_child.bbox().y)
-        rect.dy(another_child.bbox().height - rect.height() - chr_size[1] / 8 * (size === 0) -
-                                                              chr_size[2] / 8 * (size >=  1));
+        rect.dy(another_child.bbox().height - rect.height() - pow_hitbox_vert_offset[Math.min(size, max_size - 1)]);
         rect.dx(-rect.width() / 1.8);
         rect.css('cursor', 'pointer');
         rect
-            .on('mousedown', (event) => onButtonDown(cur_cont))
-            .on('mouseup mouseover', (event) => onButtonOver(cur_cont))
-            .on('mouseout', (event) => onButtonOut(cur_cont));
+            .on('mousedown', () => onButtonDown(cur_cont))
+            .on('mouseup mouseover', () => onButtonOver(cur_cont))
+            .on('mouseout', () => onButtonOut(cur_cont));
         rect.opacity(0);
         vert_shift = cur_cont.bbox().y - first_child.bbox().y + first_shift;
 
     } else if (v.value === "log") {
         let first_child, another_child, first_shift, another_shift, tmp;
         tmp = interactive_text(v.value, cur_cont, size);
-        delta += draw(cur_cont, tmp, delta) + 3;
+        delta += draw(cur_cont, tmp, delta) + inter_letter_interval;
         [first_child, first_shift] = PrintTree(v.children[0], size + 1);
         [another_child, another_shift] = PrintTree(v.children[1], size);
         vert_shift = Math.min(another_shift, vert_shift);
-        delta += v_draw(cur_cont, first_child, delta, first_shift, size) + 3;
-        first_child.y(tmp.y() + tmp.bbox().height - chr_size[0] / 2   * (size === 0)
-                                                  - chr_size[1] / 2   * (size === 1)
-                                                  - chr_size[2] / 1.3 * (size >=  2));
+        delta += v_draw(cur_cont, first_child, delta, first_shift, size) + inter_letter_interval;
+        first_child.y(tmp.y() + tmp.bbox().height - log_sub_index_vert_offset[Math.min(size, max_size)]);
         if (v.children[1].children.length > 0) {
-            tmp = interactive_text("(", another_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
-            delta += v_draw(cur_cont, another_child, delta, another_shift, size) + 3;
-            tmp = interactive_text(")", another_child, size);
-            draw(cur_cont, tmp, delta);
+            draw_with_brackets(cur_cont, another_child, delta, another_shift, size);
         } else {
             v_draw(cur_cont, another_child, delta, another_shift, size);
         }
@@ -152,17 +166,13 @@ function PrintTree(v, size) {
                 v.value === "U") && v.children.length === 2) {
         let first_child, another_child, first_shift, another_shift, tmp;
         tmp = interactive_text(v.value, cur_cont, size);
-        delta += draw(cur_cont, tmp, delta) + 3;
+        delta += draw(cur_cont, tmp, delta) + inter_letter_interval;
         [first_child, first_shift] = PrintTree(v.children[0], size + 1);
         [another_child, another_shift] = PrintTree(v.children[1], size + 1);
         v_draw(cur_cont, first_child, delta, first_shift, size);
-        first_child.y(tmp.y() + tmp.bbox().height - chr_size[0] / 2 * (size === 0)
-                                                  - chr_size[1] / 2 * (size === 1)
-                                                  - chr_size[2] / 2 * (size >= 2));
+        first_child.y(tmp.y() + tmp.bbox().height - default_vert_shift_offset[Math.min(size, max_size)]);
         v_draw(cur_cont, another_child, delta, another_shift, size);
-        another_child.y(tmp.y() - chr_size[0] * 0.2 * (size === 0)
-                                - chr_size[1] * 0.2 * (size === 1)
-                                - chr_size[2] * 0.2 * (size >= 2));
+        another_child.y(tmp.y() - combi_top_index_vert_offset[Math.min(size, max_size)]);
         if (another_child.y() + another_child.bbox().height > first_child.y()) {
             another_child.dy(-another_child.y() - another_child.bbox().height + first_child.y());
         }
@@ -171,17 +181,13 @@ function PrintTree(v, size) {
     } else if (v.value === "-") {
         let child, cur_shift, tmp;
         tmp = interactive_text("\u2212", cur_cont, size);
-        delta += draw(cur_cont, tmp, delta) + 3;
+        delta += draw(cur_cont, tmp, delta) + inter_letter_interval;
         [child, cur_shift] = PrintTree(v.children[0], size)
         vert_shift = Math.min(cur_shift, vert_shift);
         if (v.children[0].value === "-" ||
             v.children[0].value === "*" ||
             v.children[0].value === "+") {
-            tmp = interactive_text("(", child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
-            delta += v_draw(cur_cont, child, delta, cur_shift, size) + 3;
-            tmp = interactive_text(")", child, size);
-            draw(cur_cont, tmp, delta);
+            draw_with_brackets(cur_cont, child, delta, cur_shift, size);
         } else {
             v_draw(cur_cont, child, delta, cur_shift, size);
         }
@@ -191,29 +197,21 @@ function PrintTree(v, size) {
         [first_child, cur_shift] = PrintTree(v.children[0], size);
         vert_shift = Math.min(cur_shift, vert_shift);
         if (v.children[0].value === "+") {
-            tmp = interactive_text("(", first_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
-            delta += v_draw(cur_cont, first_child, delta, cur_shift, size) + 3;
-            tmp = interactive_text(")", first_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
+            delta = draw_with_brackets(cur_cont, first_child, delta, cur_shift, size);
         } else {
-            delta += v_draw(cur_cont, first_child, delta, cur_shift, size) + 3;
+            delta += v_draw(cur_cont, first_child, delta, cur_shift, size) + inter_letter_interval;
         }
         for (let i = 1; i < v.children.length; i++) {
             if (v.children[i].value !== "-") {
                 tmp = interactive_text(v.value, cur_cont, size);
-                delta += draw(cur_cont, tmp, delta) + 3;
+                delta += draw(cur_cont, tmp, delta) + inter_letter_interval;
             }
             [another_child, cur_shift] = PrintTree(v.children[i], size);
             vert_shift = Math.min(cur_shift, vert_shift);
             if (v.children[i].value === "+") {
-                tmp = interactive_text("(", another_child, size);
-                delta += draw(cur_cont, tmp, delta) + 3;
-                delta += v_draw(cur_cont, another_child, delta, cur_shift, size) + 3;
-                tmp = interactive_text(")", another_child, size);
-                delta += draw(cur_cont, tmp, delta) + 3;
+                delta = draw_with_brackets(cur_cont, another_child, delta, cur_shift, size);
             } else {
-                delta += v_draw(cur_cont, another_child, delta, cur_shift, size) + 3;
+                delta += v_draw(cur_cont, another_child, delta, cur_shift, size) + inter_letter_interval;
             }
         }
 
@@ -223,27 +221,19 @@ function PrintTree(v, size) {
         [first_child, cur_shift] = PrintTree(v.children[0], size);
         vert_shift = Math.min(cur_shift, vert_shift);
         if (v.children[0].value === "*" || v.children[0].value === "+") {
-            tmp = interactive_text('(', first_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
-            delta += v_draw(cur_cont, first_child, delta, cur_shift, size) + 3;
-            tmp = interactive_text(')', first_child, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
+            delta = draw_with_brackets(cur_cont, first_child, delta, cur_shift, size);
         } else {
-            delta += v_draw(cur_cont, first_child, delta, cur_shift, size) + 3;
+            delta += v_draw(cur_cont, first_child, delta, cur_shift, size) + inter_letter_interval;
         }
         for (let i = 1; i < v.children.length; i++) {
             tmp = interactive_text("\u2219", cur_cont, size);
-            delta += draw(cur_cont, tmp, delta) + 3;
+            delta += draw(cur_cont, tmp, delta) + inter_letter_interval;
             [another_child, cur_shift] = PrintTree(v.children[i], size);
             vert_shift = Math.min(cur_shift, vert_shift);
             if (v.children[i].value === "*" || v.children[i].value === "+") {
-                tmp = interactive_text("(", another_child, size);
-                delta += draw(cur_cont, tmp, delta) + 3;
-                delta += v_draw(cur_cont, another_child, delta, cur_shift, size) + 3;
-                tmp = interactive_text(")", another_child, size);
-                delta += draw(cur_cont, tmp, delta) + 3;
+                delta = draw_with_brackets(cur_cont, another_child, delta, cur_shift, size);
             } else {
-                delta += v_draw(cur_cont, another_child, delta, cur_shift, size) + 3;
+                delta += v_draw(cur_cont, another_child, delta, cur_shift, size) + inter_letter_interval;
             }
         }
 
@@ -254,8 +244,8 @@ function PrintTree(v, size) {
         [child, cur_shift] = PrintTree(v.children[0], size);
         vert_shift = Math.min(cur_shift, vert_shift);
         tmp = interactive_text(v.value + '(', cur_cont, size);
-        delta += draw(cur_cont, tmp, delta) + 3;
-        delta += v_draw(cur_cont, child, delta, cur_shift, size) + 3;
+        delta += draw(cur_cont, tmp, delta) + inter_letter_interval;
+        delta += v_draw(cur_cont, child, delta, cur_shift, size) + inter_letter_interval;
         tmp = interactive_text(')', cur_cont, size);
         draw(cur_cont, tmp, delta);
 
@@ -268,24 +258,24 @@ function PrintTree(v, size) {
 }
 
 let expr = PrintTree(TreeRoot, 0)[0];
-expr.move(100, 100);
+expr.move(test_expr_x, test_expr_y);
 
 function onButtonDown(con) {
-    con.fill('#00FFFF');
+    con.fill(mouse_down_text_colour);
     for (let item of con.children()) {
         onButtonDown(item);
     }
 }
 
 function onButtonOver(con) {
-    con.fill('#AAAAAA');
+    con.fill(mouse_over_text_colour);
     for (let item of con.children()) {
         onButtonOver(item);
     }
 }
 
 function onButtonOut(con) {
-    con.fill('#CCCCCC');
+    con.fill(default_text_colour);
     for (let item of con.children()) {
         onButtonOut(item);
     }
