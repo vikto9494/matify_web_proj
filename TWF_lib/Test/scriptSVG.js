@@ -1,31 +1,46 @@
 const background_colour = '#1F1F1F';
+const background_width = 1000;
+const background_height = 800;
+
+const app = new SVG().addTo('body').size(background_width, background_height);
+app.viewbox(0, 0, background_width, background_height);
+app.rect(background_width, background_height).fill(background_colour);
+
+const init_font_size = 100;                                // Change this to resize all printed text
+
+let chr_sample = app.text('X').font({size: init_font_size});
+const init_chr_size = chr_sample.bbox().height;
+chr_sample.remove();
+
 const default_text_colour = '#CCCCCC';
 const mouse_over_text_colour = '#AAAAAA';
 const mouse_down_text_colour = '#00FFFF';
-const test_expr_x = 100;
-const test_expr_y = 100;
-const inter_letter_interval = 3;
-const font_size = [100, 71, 50];
-const init_chr_size = 110.8125;
+
+const font_size = [init_font_size, init_font_size / Math.sqrt(2), init_font_size / 2];
 const chr_size = [init_chr_size, init_chr_size / Math.sqrt(2), init_chr_size / 2];
+
 const max_size = 2;
-const line_height = [5, 4, 3];
-const line_elongation = 30;
+const inter_letter_interval = init_chr_size / 36;
+
+const line_height = [chr_size[0] / 22.16, chr_size[1] / 19.6, chr_size[2] / 18.47];
+const line_elongation = init_chr_size / 3.7;
+
 const default_vert_shift_offset = [chr_size[0] / 2, chr_size[1] / 2, chr_size[2] / 2];
+
 const pow_vert_offset = chr_size[2] / 5;
 const pow_hitbox_width = [chr_size[1] / 2.5, chr_size[2] / 2.5];
 const pow_hitbox_height = [chr_size[1] / 2, chr_size[2] / 2];
 const pow_hitbox_vert_offset = [chr_size[1] / 8, chr_size[2] / 8];
+
 const log_sub_index_vert_offset = [chr_size[0] / 2, chr_size[1] / 2, chr_size[2] / 1.3];
+
 const combi_top_index_vert_offset = [chr_size[0] / 5, chr_size[1] / 5, chr_size[2] / 4];
-const background_width = 1000;
-const background_height = 800;
-const test_string = "+(^(A;log(A;B));-(^(C;log(C;B))))";
 
-const app = new SVG().addTo('body').size(background_width, background_height);
-app.viewbox(0, 0, background_width, background_height);
 
-app.rect(background_width, background_height).fill(background_colour);
+const test_expr_x = 100;
+const test_expr_y = 100;
+const test_expr = "+(X;+(/(X;/(X;X))))";
+
 
 function MakeNode(node) {
     this.value = node.value;
@@ -60,7 +75,7 @@ function interactive_text(value, cont, size) {
     return txt;
 }
 
-let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$(test_string);
+let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$(test_expr);
 
 let TreeRoot = MakeTree(NewTreeRoot.children.toArray()[0]);
 
@@ -81,7 +96,7 @@ function Division(a, b, cont, size) {
     b.y(a.bbox().y + a.bbox().height + line.height());
     a.dx((line.width() - a.bbox().width) / 2);
     b.dx((line.width() - b.bbox().width) / 2);
-    return a.bbox().height + line.height() / 3;             //recommended vertical shift to keep the fraction centered
+    return a.bbox().height + line.height() / 3;            //recommended vertical shift to keep the fraction centered
 }
 
 function calculate_vert_shift(shift, size) {
