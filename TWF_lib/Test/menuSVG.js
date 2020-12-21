@@ -4,8 +4,6 @@ const testString = ["+(1;*(B;C))","+(2;*(4;5))","+(3;*(6;7))","+(4;*(8;9))","+(5
 const chr_size = [110.8125, 78.421875, 55.21875];
 MakeMainMenu(testString);
 
-//MakeMenuOfLevel(1);
-
 function MakeMainMenu(levelsList) {
     let app = new SVG().addTo('body').size(window.innerWidth, Math.max(100 * (levelsList.length), window.innerHeight));
     app.viewbox(0, 0, window.innerWidth,  Math.max(100 * (levelsList.length), window.innerHeight));

@@ -26,7 +26,6 @@
 ^(e;*(\u03C6;i))
 ^(sin(A);2)
 log(log(log(log(a;a);a);a);a)
-^(A;log(A;B))
 +(^(A;log(A;B));-(^(C;log(C;B))))
 ^(A;log(log(log(log(a;a);a);a);a))
 ^(A;^(/(/(/(C;D);D);D);B))
