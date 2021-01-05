@@ -18,19 +18,54 @@ PlainPrintTree(TWF_v, init_font_size, app);
 
 
 
-initTestingGround(test_expr, font_size);
+initTestingGround(test_expr, init_font_size);
 
 test_expr - structure_string строка, описывающая дерево для отрисовки
-font_size - желаемый размер шрифта
+init_font_size - желаемый размер шрифта
 
 Создает небольшую сцену, на которую отрисовывает дерево из test_expr
 
+
+
+initTimer(app, init_font_size)
+
+app - SVG контейнер, в который надо поместить таймер
+init_font_size - желаемый размер шрифта
+
+Создает таймер, который будет обновляться раз в секунду и показывать,
+сколько времени прошло с момента его создания в формате mm:ss
+
 */
 
-//const test_string = "^(X;/(^(X;/(X;X));X))";
-//initTestingGround(test_string, 100);
+function initTimer(app, init_font_size) {
+    const timer_colour = '#CCCCCC';
+    let counter = 0;
 
-function initTestingGround(test_expr, font_size) {
+    let txt = app.text("00:00").font({
+        size: init_font_size,
+        family: 'u2000',
+        fill: timer_colour,
+        leading: 0.9
+    });
+
+    txt.css('user-select', 'none');
+
+    function updateTimer() {
+        counter++;
+        let time_passed = new Date(1000 * counter);
+
+        txt.text(`${Math.floor(time_passed.getMinutes() / 10)}` +
+                 `${time_passed.getMinutes() % 10}:` +
+                 `${Math.floor(time_passed.getSeconds() / 10)}` +
+                 `${time_passed.getSeconds() % 10}`);
+    }
+
+    setInterval(updateTimer, 1000);
+
+    return txt;
+}
+
+function initTestingGround(test_expr, init_font_size) {
     const background_colour = '#1F1F1F';
     const background_width = 800;
     const background_height = 800;
@@ -41,8 +76,9 @@ function initTestingGround(test_expr, font_size) {
     app.rect(background_width, background_height).fill(background_colour);
 
     let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$(test_expr);
-    let expr = PrintTree(NewTreeRoot, font_size, app);
+    let expr = PrintTree(NewTreeRoot, init_font_size, app);
     expr.move(0, 100);
+    return app;
 }
 
 function MakeNode(node, app) {
