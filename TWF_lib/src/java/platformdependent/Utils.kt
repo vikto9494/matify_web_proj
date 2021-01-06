@@ -31,7 +31,7 @@ fun escapeBackSlash (string: String, characterEscapingDepth: Int = 1): String{
 fun Double.toShortString (): String{
     var stringValue = this.toString()
     if (stringValue.contains('.')) {
-        if (stringValue.contains("999")){
+        if (stringValue.contains("999")) {
             val fractionPart = stringValue.substringAfter(".").substringBefore("999")
             stringValue = stringValue.substringBefore(".")
             if (fractionPart.isNotEmpty() && fractionPart != "9")

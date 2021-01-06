@@ -149,11 +149,3 @@ fun optGenerateSimpleComputationRule(
     }
     return result
 }
-
-
-private fun addRootNodeToExpression(expression: ExpressionNode) : ExpressionNode {
-    val root = ExpressionNode(NodeType.FUNCTION, "")
-    root.addChild(expression)
-    root.computeIdentifier()
-    return root
-}

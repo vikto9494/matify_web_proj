@@ -23,14 +23,20 @@ data class FunctionProperties(
         val priority: Double,
         val numberOfArguments: Int,
         val isCommutativeWithNullWeight: Boolean = false,
+        val mainFunctionIsCommutativeWithNullWeight: Boolean = false,
         val numberOfDefinitionArguments: Int = 0, //number of first arguments, that defines used in function vars, for example i in S(i, a, b, f(i))
         val isNameForRuleDesignations: Boolean = false, //need for matching function (for example, in rules for 'S(i, a, b, f(i) + g(i))')
         val plainTextRepresentation: String = function,
         val texRepresentation: String = plainTextRepresentation,
         val defaultStringDefinitionType: StringDefinitionType = StringDefinitionType.FUNCTION,
         val texStringDefinitionType: StringDefinitionType = defaultStringDefinitionType,
-        val minNumberOfPointsForEquality: Int = 2
-)
+        private val notObligateMainFunction: String? = null,
+        val minNumberOfPointsForEquality: Int = 2,
+        val fieldAddZero: String? = null,
+        val fieldMulZero: String? = null
+) {
+    fun notObligateMainFunction() = notObligateMainFunction ?: mainFunction
+}
 
 data class FunctionStringDefinition(
         val function: FunctionProperties,
@@ -156,10 +162,10 @@ class FunctionConfiguration (
     var taskContextTreeTransformationRules = mutableListOf<TreeTransformationRule>()
 
     var functionProperties = mutableListOf<FunctionProperties>(
-            FunctionProperties("+", "+", 1.0, -1, isCommutativeWithNullWeight = true, defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
-            FunctionProperties("-", "+", 1.0, -1, defaultStringDefinitionType = StringDefinitionType.UNARY_LEFT_OPERATION),
-            FunctionProperties("*", "*", 2.0, -1, isCommutativeWithNullWeight = true, texRepresentation = "\\cdot", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
-            FunctionProperties("/", "/", 1.9, -1, texRepresentation = "\\frac", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),  //FunctionProperties("/", "*", 2.0, -1)
+            FunctionProperties("+", "+", 1.0, -1, isCommutativeWithNullWeight = true, defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION, fieldAddZero = "0"),
+            FunctionProperties("-", "+", 1.0, -1, mainFunctionIsCommutativeWithNullWeight = true, defaultStringDefinitionType = StringDefinitionType.UNARY_LEFT_OPERATION, notObligateMainFunction = "+"),
+            FunctionProperties("*", "*", 2.0, -1, isCommutativeWithNullWeight = true, texRepresentation = "\\cdot", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION, mainFunctionIsCommutativeWithNullWeight = true, fieldAddZero = "1", fieldMulZero = "0"),
+            FunctionProperties("/", "/", 1.9, -1, texRepresentation = "\\frac", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION, mainFunctionIsCommutativeWithNullWeight = true, notObligateMainFunction = "*"),  //FunctionProperties("/", "*", 2.0, -1)
             FunctionProperties("^", "^", 3.0, -1, defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
             FunctionProperties("S", "S", 5.0, 4, numberOfDefinitionArguments = 1, minNumberOfPointsForEquality = Int.MAX_VALUE),
             FunctionProperties("P", "P", 5.0, 4, numberOfDefinitionArguments = 1, minNumberOfPointsForEquality = Int.MAX_VALUE),
@@ -185,10 +191,10 @@ class FunctionConfiguration (
             FunctionProperties("log", "log", 5.0, 2, texStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
             FunctionProperties("mod", "mod", 5.0, 2),
 
-            FunctionProperties("and", "and", 0.7, -1, isCommutativeWithNullWeight = true, plainTextRepresentation = "&", texRepresentation = "\\land", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
-            FunctionProperties("or", "or", 0.6, -1, isCommutativeWithNullWeight = true, plainTextRepresentation = "|", texRepresentation = "\\lor", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
-            FunctionProperties("xor", "xor", 0.6, -1, isCommutativeWithNullWeight = true, plainTextRepresentation = "^", texRepresentation = "\\oplus", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
-            FunctionProperties("alleq", "alleq", 0.4, -1, isCommutativeWithNullWeight = true, defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
+            FunctionProperties("and", "and", 0.7, -1, isCommutativeWithNullWeight = true, mainFunctionIsCommutativeWithNullWeight = true, plainTextRepresentation = "&", texRepresentation = "\\land", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION, fieldAddZero = "1", fieldMulZero = "0"),
+            FunctionProperties("or", "or", 0.6, -1, isCommutativeWithNullWeight = true, mainFunctionIsCommutativeWithNullWeight = true, plainTextRepresentation = "|", texRepresentation = "\\lor", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION, fieldAddZero = "0", fieldMulZero = "1"),
+            FunctionProperties("xor", "xor", 0.6, -1, isCommutativeWithNullWeight = true, mainFunctionIsCommutativeWithNullWeight = true, plainTextRepresentation = "^", texRepresentation = "\\oplus", defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION, fieldAddZero = "0"),
+            FunctionProperties("alleq", "alleq", 0.4, -1, isCommutativeWithNullWeight = true, mainFunctionIsCommutativeWithNullWeight = true, defaultStringDefinitionType = StringDefinitionType.BINARY_OPERATION),
 
             FunctionProperties("not", "not", 5.0, 1, plainTextRepresentation = "!", texRepresentation = "\\neg", defaultStringDefinitionType = StringDefinitionType.UNARY_LEFT_OPERATION),
 
@@ -272,7 +278,7 @@ class FunctionConfiguration (
             FunctionStringDefinition(functionPropertiesByName["or_-1"]!!, StringDefinitionType.BINARY_OPERATION, "\\/"),
             FunctionStringDefinition(functionPropertiesByName["and_-1"]!!, StringDefinitionType.BINARY_OPERATION, "&#x2227"),
             FunctionStringDefinition(functionPropertiesByName["or_-1"]!!, StringDefinitionType.BINARY_OPERATION, "&#x2228"),
-            FunctionStringDefinition(functionPropertiesByName["or_-1"]!!, StringDefinitionType.BINARY_OPERATION, "^", filter = "setTheory"),
+            FunctionStringDefinition(functionPropertiesByName["xor_-1"]!!, StringDefinitionType.BINARY_OPERATION, "^", filter = "setTheory"),
             FunctionStringDefinition(functionPropertiesByName["xor_-1"]!!, StringDefinitionType.BINARY_OPERATION, "&#x2295"),
             FunctionStringDefinition(functionPropertiesByName["xor_-1"]!!, StringDefinitionType.BINARY_OPERATION, "\\oplus"),
             FunctionStringDefinition(functionPropertiesByName["not_1"]!!, StringDefinitionType.UNARY_LEFT_OPERATION, "&#xAC"),

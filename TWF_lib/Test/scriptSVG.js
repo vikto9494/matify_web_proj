@@ -39,7 +39,7 @@ init_font_size - желаемый размер шрифта
 
 function initTimer(app, init_font_size) {
     const timer_colour = '#CCCCCC';
-    let counter = 0;
+    let seconds_passed = 0;
 
     let txt = app.text("00:00").font({
         size: init_font_size,
@@ -51,8 +51,8 @@ function initTimer(app, init_font_size) {
     txt.css('user-select', 'none');
 
     function updateTimer() {
-        counter++;
-        let time_passed = new Date(1000 * counter);
+        seconds_passed++;
+        let time_passed = new Date(1000 * seconds_passed);
 
         txt.text(`${Math.floor(time_passed.getMinutes() / 10)}` +
                  `${time_passed.getMinutes() % 10}:` +
@@ -75,7 +75,7 @@ function initTestingGround(test_expr, init_font_size) {
     app.viewbox(0, 0, background_width, background_height);
     app.rect(background_width, background_height).fill(background_colour);
 
-    let NewTreeRoot = TWF_lib.api.structureStringToExpression_69c2cy$(test_expr);
+    let NewTreeRoot = TWF_lib.structureStringToExpression(test_expr);
     let expr = PrintTree(NewTreeRoot, init_font_size, app);
     expr.move(0, 100);
     return app;
@@ -149,11 +149,11 @@ function PrintTree(TWF_v, init_font_size, app) {
         let txt = cont.text(value).font({
             size: font_size[min(size, max_size)],
             family: 'u2000',
-            fill: default_text_colour
+            fill: default_text_colour,
+            leading: 0.9
         });
         txt.css('cursor', 'pointer');
         txt.css('user-select', 'none');
-        txt.leading(0.9);
         txt
             .on('mousedown', () => onButtonDown(cont))
             .on('mouseup mouseover', () => onButtonOver(cont))

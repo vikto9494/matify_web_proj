@@ -1,9 +1,6 @@
 package expressiontree
 
-import config.ComparisonType
-import config.FunctionConfiguration
-import config.FunctionStringDefinition
-import config.StringDefinitionType
+import config.*
 import platformdependent.toShortString
 import standartlibextensions.*
 import kotlin.math.max
@@ -19,6 +16,19 @@ data class NodeValue(
         var exactNumber: Int
 )
 
+data class ExpressionStrictureIdentifier (
+        var originalOrderIdentifier: String,
+        var commutativeSortedIdentifier: String
+) {
+    override fun equals(other: Any?): Boolean {
+        if (other is ExpressionStrictureIdentifier)
+            return originalOrderIdentifier == other.originalOrderIdentifier || commutativeSortedIdentifier == other.commutativeSortedIdentifier
+        else return false
+    }
+
+    override fun hashCode() = 1
+}
+
 data class ExpressionNode(
         //data
         var nodeType: NodeType,
@@ -30,18 +40,29 @@ data class ExpressionNode(
         var functionStringDefinition: FunctionStringDefinition? = null, //maybe ExpressionNode also should have string with original representation, not just link on definition kind
         var identifier: String = "",
         var nodeId: Int = -1,
-        var distanceToRoot: Int = 0
+        var distanceToRoot: Int = 0,
+        var expressionStrictureIdentifier: ExpressionStrictureIdentifier? = null
 ) {
-    var children: ArrayList<ExpressionNode> = ArrayList()
+    var children: MutableList<ExpressionNode> = mutableListOf()
 
     //only facts variables:
-    var rules: ArrayList<ExpressionSubstitution> =
-            ArrayList() //correct for this and children levels transformation rules
+    var rules: MutableList<ExpressionSubstitution> = mutableListOf() //correct for this and children levels transformation rules
     var parserMark: String = ""
     //todo(add fact chain type: '>', '=', '<', 'equality')
+    var linkOnOriginalTreeNode: ExpressionNode? = null
 
     fun addChild(newNode: ExpressionNode) {
         children.add(newNode)
+        newNode.parent = this
+    }
+
+    fun addChildOnPosition(newNode: ExpressionNode, position: Int) {
+        children.add(position, newNode)
+        newNode.parent = this
+    }
+
+    fun setChildOnPosition(newNode: ExpressionNode, position: Int) {
+        children[position] = newNode
         newNode.parent = this
     }
 
@@ -54,6 +75,7 @@ data class ExpressionNode(
         nodeType = NodeType.VARIABLE
         this.value = value
         identifier = value
+        functionStringDefinition = null
     }
 
     fun setNode(value: ExpressionNode) {
@@ -79,12 +101,43 @@ data class ExpressionNode(
         return result
     }
 
-    fun computeNodeIdsAsNumbersInDirectTraversalAndDistancesToRoot(startId: Int = 0, startDistance: Int = 0): Int {
-        nodeId = startId
+    fun getChildNodesOnDepthOrWhileOperation(depth: Int, operationList: List<String>): List<ExpressionNode> {
+        val result = mutableListOf<ExpressionNode>()
+        if (depth < 1 && value !in operationList) return result
+        for (child in children) {
+            result.add(child)
+            result.addAll(child.getChildNodesOnDepthOrWhileOperation(depth - 1, operationList))
+        }
+        return result
+    }
+
+    fun getChildNodesWhileOperation(operationList: List<String>): List<ExpressionNode> {
+        val result = mutableListOf<ExpressionNode>()
+        if (value !in operationList){
+            result.add(this)
+        } else {
+            for (child in children) {
+                result.addAll(child.getChildNodesWhileOperation(operationList))
+            }
+        }
+        return result
+    }
+
+    fun resetNodeIds() {
+        nodeId = -1
+        for (child in children) {
+            child.resetNodeIds()
+        }
+    }
+
+    fun computeNodeIdsAsNumbersInDirectTraversalAndDistancesToRoot(startId: Int = 0, startDistance: Int = 0, replaceCalculatedNodeIds: Boolean = true): Int {
+        if (replaceCalculatedNodeIds || nodeId < 0) {
+            nodeId = startId
+        }
         var currentStartId = startId + 1
         distanceToRoot = startDistance
         for (child in children) {
-            currentStartId = child.computeNodeIdsAsNumbersInDirectTraversalAndDistancesToRoot(currentStartId, startDistance + 1)
+            currentStartId = child.computeNodeIdsAsNumbersInDirectTraversalAndDistancesToRoot(currentStartId, startDistance + 1, replaceCalculatedNodeIds)
         }
         return currentStartId
     }
@@ -108,6 +161,16 @@ data class ExpressionNode(
         }
     }
 
+    fun normalizeFunctionStringDefinitions(functionConfiguration: FunctionConfiguration) {
+        functionStringDefinition = functionConfiguration.fastFindStringDefinitionByNameAndNumberOfArguments(
+                value,
+                children.size
+        )
+        for (child in children) {
+            child.normalizeFunctionStringDefinitions(functionConfiguration)
+        }
+    }
+
     fun reduceExtraSigns(extraUnaryFunctions: Set<String>, exclusionChildFunctions: Set<String> = setOf()) {
         for (i in children.lastIndex downTo 0) {
             children[i].reduceExtraSigns(extraUnaryFunctions, exclusionChildFunctions)
@@ -123,7 +186,7 @@ data class ExpressionNode(
             children[i].normilizeSubtructions(functionConfiguration)
             if (children[i].nodeType == NodeType.VARIABLE && children[i].value.startsWith("-")) {
                 val double = children[i].value.toDoubleOrNull()
-                if (double != null && double < 0) {
+                if (double != null && double <= 0) {
                     if (value == "-") {
                         setVariable((-double).toString())
                     } else {
@@ -155,6 +218,37 @@ data class ExpressionNode(
                 plusParent.addChild(children[i])
                 children[i] = plusParent
             }
+        }
+    }
+
+    fun normalizeNullWeightCommutativeFunctions() {
+        for (i in children.lastIndex downTo 0) {
+            children[i].normalizeNullWeightCommutativeFunctions()
+            if (children[i].children.size == 1 && children[i].functionStringDefinition?.function?.isCommutativeWithNullWeight == true) {
+                children[i].children.first().parent = this
+                children[i] = children[i].children.first()
+            }
+        }
+    }
+
+    fun fillStructureStringIdentifiers (getNodeValueString: (ExpressionNode) -> String = { it.getNodeValueString() }) {
+        if (nodeType == NodeType.VARIABLE) {
+            val v = getNodeValueString(this)
+            expressionStrictureIdentifier = ExpressionStrictureIdentifier(v, v)
+        } else {
+            val start = value + "("
+            expressionStrictureIdentifier = ExpressionStrictureIdentifier(start, start)
+            for (child in children) {
+                child.fillStructureStringIdentifiers(getNodeValueString)
+            }
+            expressionStrictureIdentifier!!.originalOrderIdentifier += children.joinToString (separator = ";") { it.expressionStrictureIdentifier!!.originalOrderIdentifier }
+            expressionStrictureIdentifier!!.commutativeSortedIdentifier += if (functionStringDefinition?.function?.isCommutativeWithNullWeight == true) {
+                children.sortedBy { it.expressionStrictureIdentifier!!.commutativeSortedIdentifier }.joinToString(separator = ";") { it.expressionStrictureIdentifier!!.commutativeSortedIdentifier }
+            } else {
+                children.joinToString(separator = ";") { it.expressionStrictureIdentifier!!.commutativeSortedIdentifier }
+            }
+            expressionStrictureIdentifier!!.originalOrderIdentifier += ")"
+            expressionStrictureIdentifier!!.commutativeSortedIdentifier += ")"
         }
     }
 
@@ -543,7 +637,7 @@ data class ExpressionNode(
     fun isBoolExpression(boolFunctions: Set<String>) = getContainedFunctions().intersect(boolFunctions).isNotEmpty()
 
     fun getContainedFunctions(): Set<String> {
-        var result = mutableSetOf<String>()
+        val result = mutableSetOf<String>()
         if (!children.isEmpty()) {
             if (value.isNotBlank()) {
                 result.add(value)
@@ -554,8 +648,54 @@ data class ExpressionNode(
         return result
     }
 
+    fun topOperationIsPossibleMainFunction (topOperation: String) = functionStringDefinition?.function?.notObligateMainFunction() == topOperation || (linkOnOriginalTreeNode?.children?.size == 1 // Assume that operation division '/' always has 2 arguments
+            && functionStringDefinition?.function?.numberOfArguments == -1 && functionStringDefinition?.function?.mainFunctionIsCommutativeWithNullWeight == true)
+
+    fun getContainedChildOperationNodeIds(topOperation: String): Set<Int> {
+        val result = mutableSetOf<Int>()
+        if (children.isEmpty() || !topOperationIsPossibleMainFunction(topOperation)) {
+            result.add(nodeId)
+        } else for (child in children)
+            result.addAll(child.getContainedChildOperationNodeIds(topOperation))
+        return result
+    }
+
+    fun getAllChildrenNodeIds(): Set<Int> {
+        val result = mutableSetOf<Int>()
+        for (child in children) {
+            result.add(child.nodeId)
+            result.addAll(child.getAllChildrenNodeIds())
+        }
+        return result
+    }
+
+    fun allParentsMainFunctionIs(topOperation: String): Boolean {
+        if (!topOperationIsPossibleMainFunction(topOperation)) {
+            return children.isEmpty() // all children parents main function is not 'topOperation'
+        } else {
+            for (child in children) {
+                if (!child.allParentsMainFunctionIs(topOperation)) {
+                    return false
+                }
+            }
+        }
+        return true
+    }
+
+    fun listWhichParentsFunctionIs(topOperation: String): List<ExpressionNode> {
+        if (value != topOperation) {
+            return if (children.isEmpty()) listOf(linkOnOriginalTreeNode!!) else emptyList()
+        } else {
+            val result = mutableListOf<ExpressionNode>()
+            for (child in children) {
+                result.addAll(child.listWhichParentsFunctionIs(topOperation))
+            }
+            return result
+        }
+    }
+
     fun getContainedVariables(): Set<String> {
-        var result = mutableSetOf<String>()
+        val result = mutableSetOf<String>()
         if (children.isEmpty()) {
             if (value != "π" && value.toDoubleOrNull() == null) {
                 result.add(value)
@@ -566,7 +706,7 @@ data class ExpressionNode(
     }
 
     fun getContainedVariables(variables: Set<String>): Set<String> {
-        var result = mutableSetOf<String>()
+        val result = mutableSetOf<String>()
         if (children.isEmpty()) {
             if (value.toDoubleOrNull() == null) {
                 if (variables.contains(value)) {
@@ -579,7 +719,7 @@ data class ExpressionNode(
     }
 
     fun getNotContainedVariables(variables: Set<String>): Set<String> {
-        var result = mutableSetOf<String>()
+        val result = mutableSetOf<String>()
         if (children.isEmpty()) {
             if (value.toDoubleOrNull() == null) {
                 if (!variables.contains(value)) {
@@ -706,16 +846,40 @@ data class ExpressionNode(
         return result
     }
 
-    fun cloneAndSimplifyByComputeSimplePlaces(): ExpressionNode {
-        if (calcComplexity() < 4 && !containsVariables()) {
-            val computed = computeNodeIfSimple()
+    fun cloneAndSimplifyByCommutativeNormalizeAndComputeSimplePlaces(compiledConfiguration: CompiledConfiguration = CompiledConfiguration(), selectedNodeIds: Array<Int> = emptyArray()): ExpressionNode {
+        if ((selectedNodeIds.isEmpty() || !getAllChildrenNodeIds().containsAny(selectedNodeIds)) &&
+                calcComplexity() <= compiledConfiguration.simpleComputationRuleParams.maxCalcComplexity && !containsVariables()) {
+            val computed = computeNodeIfSimple(compiledConfiguration.simpleComputationRuleParams)
+            if (computed != null) {
+                val actualNodeId = nodeId
+                return compiledConfiguration.createExpressionVariableNode(computed).apply { nodeId = actualNodeId }
+            }
+        }
+        val result = copy()
+        for (child in children) {
+            val simplifiedChild = child.cloneAndSimplifyByCommutativeNormalizeAndComputeSimplePlaces(compiledConfiguration, selectedNodeIds)
+            if (simplifiedChild.value == value && functionStringDefinition?.function?.isCommutativeWithNullWeight == true && simplifiedChild.nodeId !in selectedNodeIds) {
+                for (childOfChild in simplifiedChild.children) {
+                    result.addChild(childOfChild.cloneAndSimplifyByCommutativeNormalizeAndComputeSimplePlaces(compiledConfiguration, selectedNodeIds))
+                }
+            } else {
+                result.addChild(simplifiedChild)
+            }
+        }
+        return result
+    }
+
+    fun cloneAndSimplifyByComputeSimplePlaces(simpleComputationRuleParams: SimpleComputationRuleParams = simpleComputationRuleParamsDefault, selectedNodeIds: Array<Int> = emptyArray()): ExpressionNode {
+        if ((selectedNodeIds.isEmpty() || !getAllChildrenNodeIds().containsAny(selectedNodeIds)) &&
+                calcComplexity() <= simpleComputationRuleParams.maxCalcComplexity && !containsVariables()) {
+            val computed = computeNodeIfSimple(simpleComputationRuleParams)
             if (computed != null) {
                 return ExpressionNode(NodeType.VARIABLE, computed.toShortString(), nodeId = nodeId)
             }
         }
         val result = copy()
         for (child in children) {
-            result.addChild(child.cloneAndSimplifyByComputeSimplePlaces())
+            result.addChild(child.cloneAndSimplifyByComputeSimplePlaces(simpleComputationRuleParams, selectedNodeIds))
         }
         return result
     }
@@ -883,6 +1047,9 @@ class ExpressionNodeConstructor(
         val compiledImmediateVariableReplacements: Map<String, String> = mapOf()
 ) {
     fun construct(identifier: String): ExpressionNode {
+        if (identifier.isEmpty()) {
+            return ExpressionNode(NodeType.FUNCTION, "")
+        }
         val child = if (identifier.first() == '(' && identifier.last() == ')') {
             constructRecursive(identifier.substring(1, identifier.lastIndex), 1)
         } else {
@@ -979,4 +1146,11 @@ fun divisionTree(dividend: ExpressionNode, divider: ExpressionNode): ExpressionN
     result.children.first().addChild(dividend.children.first().clone())
     result.children.first().addChild(divider.children.first().clone())
     return result
+}
+
+fun addRootNodeToExpression(expression: ExpressionNode) : ExpressionNode {
+    val root = ExpressionNode(NodeType.FUNCTION, "")
+    root.addChild(expression)
+    root.computeIdentifier()
+    return root
 }

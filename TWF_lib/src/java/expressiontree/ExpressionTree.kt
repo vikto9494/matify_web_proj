@@ -116,13 +116,13 @@ data class ExpressionParserNode(
         return minPriority
     }
 
-    fun resolveBinaryOperationsWithPriorityRecursive(priority: Double) {
+    fun resolveBinaryOperationsWithPriorityRecursive(priority: Double, functionConfiguration: FunctionConfiguration) {
         var operationWithMinPriority = ExpressionParserNode(Type.BINARY_OPERATION, "", startPosition, endPosition)
         for (child in children) {
-            child.resolveBinaryOperationsWithPriorityRecursive(priority)
+            child.resolveBinaryOperationsWithPriorityRecursive(priority, functionConfiguration)
             if (child.type == Type.BINARY_OPERATION &&
                     child.functionStringDefinition!!.function.priority <= priority && child.children.size == 0) {
-                operationWithMinPriority.functionStringDefinition = child.functionStringDefinition
+                operationWithMinPriority.functionStringDefinition = functionConfiguration.fastFindStringDefinitionByNameAndNumberOfArguments(child.functionStringDefinition!!.function.mainFunction, child.functionStringDefinition!!.function.numberOfArguments)
                 operationWithMinPriority.value = child.functionStringDefinition!!.function.mainFunction
             }
         }
@@ -1147,7 +1147,7 @@ class ExpressionTreeParser(
         while (true) {
             val minPriority = actualParent.getMinPriorityOfBinaryOperationsWithoutOperands()
             if (minPriority == Double.MAX_VALUE) break
-            actualParent.resolveBinaryOperationsWithPriorityRecursive(minPriority)
+            actualParent.resolveBinaryOperationsWithPriorityRecursive(minPriority, functionConfiguration)
         }
     }
 

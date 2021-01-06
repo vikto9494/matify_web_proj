@@ -127,11 +127,25 @@ class ExpressionSubstitution(
         val right: ExpressionNode,
         val weight: Double = 1.0,
         val basedOnTaskContext: Boolean = false,
-        val name: String = "",
+        val code: String = "",
+        val nameEn: String = "",
+        val nameRu: String = "",
         val comparisonType: ComparisonType = ComparisonType.EQUAL,
         val leftFunctions: Set<String> = left.getContainedFunctions(),
-        val matchJumbledAndNested: Boolean = false
+        val matchJumbledAndNested: Boolean = false,
+        var priority: Int? = null,
+        var changeOnlyOrder: Boolean = false,
+        var simpleAdditional: Boolean = false,
+        var isExtending: Boolean = false
 ) {
+    init {
+        if (!changeOnlyOrder) {
+            val leftSorted = left.clone().apply { normalizeSubTree(sorted = true) }
+            val rightSorted = right.clone().apply { normalizeSubTree(sorted = true) }
+            changeOnlyOrder = leftSorted.toString() == rightSorted.toString()
+        }
+    }
+
     var identifier = ""
     fun computeIdentifier(recomputeIfComputed: Boolean): String {
         if (identifier.isBlank() || recomputeIfComputed) {
@@ -198,9 +212,10 @@ class ExpressionSubstitution(
                         }
                     }
                 } else {
-                    if (conditionNode.children.size != expressionNode.children.size ||
-                            !conditionNode.isNodeValueEquals(expressionNode)
-                    ) {
+                    if (conditionNode.children.size < expressionNode.children.size ||
+                            (conditionNode.children.size != expressionNode.children.size && (conditionNode.functionStringDefinition?.function?.fieldAddZero == null ||
+                                    conditionNode.functionStringDefinition?.function?.isCommutativeWithNullWeight != true || !matchJumbledAndNested)) ||
+                            !conditionNode.isNodeValueEquals(expressionNode)) {
                         if (onlyCheckListFlag == null) {
                             substitutionInstance.isApplicable = false
                         } else {
@@ -214,7 +229,7 @@ class ExpressionSubstitution(
                     for (i in 0 until argumentStartIndex) { //for indexes in n-placement functions
                         nameArgsMap.put(expressionNode.children[i].value, conditionNode.children[i].value)
                     }
-                    if (matchJumbledAndNested && conditionNode.children.size > 1 && conditionNode.functionStringDefinition?.function?.isCommutativeWithNullWeight ?: false) {
+                    if (matchJumbledAndNested && conditionNode.functionStringDefinition?.function?.isCommutativeWithNullWeight ?: false) {
                         val usedNodes = mutableSetOf<Int>()
                         var expressionStartNodeIndex = argumentStartIndex
                         for (i in argumentStartIndex..conditionNode.children.lastIndex) {
@@ -240,6 +255,20 @@ class ExpressionSubstitution(
                                 isMatched = true
                                 break
                             }
+                            if (!isMatched && conditionNode.functionStringDefinition?.function?.fieldAddZero != null &&
+                                    conditionNode.children[i].nodeType == NodeType.VARIABLE && !conditionNode.children[i].isNumberValue()) {
+                                val varValue = substitutionInstance.getExprVar(conditionNode.children[i].value)
+                                if (varValue == null) {
+                                    isMatched = true
+                                    if (onlyCheckListFlag == null) {
+                                        substitutionInstance.putExprVar(conditionNode.children[i].value, ExpressionNode(NodeType.VARIABLE, conditionNode.functionStringDefinition!!.function.fieldAddZero!!))
+                                    }
+                                } else {
+                                    if (varValue.isNodeSubtreeEquals(ExpressionNode(NodeType.VARIABLE, conditionNode.functionStringDefinition!!.function.fieldAddZero!!))) {
+                                        isMatched = true
+                                    }
+                                }
+                            }
                             if (!isMatched) {
                                 if (onlyCheckListFlag == null) {
                                     substitutionInstance.isApplicable = false
@@ -250,7 +279,7 @@ class ExpressionSubstitution(
                             }
                         }
                     } else {
-                        for (i in argumentStartIndex..conditionNode.children.lastIndex) {
+                        for (i in argumentStartIndex..expressionNode.children.lastIndex) {
                             if (onlyCheckListFlag != null) {
                                 checkConditionCompanion(expressionNode.children[i], conditionNode.children[i], substitutionInstance, nameArgsMap, basedOnTaskContext, matchJumbledAndNested, onlyCheckListFlag)
                                 //fast approximate check
@@ -390,13 +419,16 @@ class ExpressionSubstitution(
         }
     }
 
-    fun applyRight(substitutionInstance: SubstitutionInstance, right: ExpressionNode = this.right.children[0]) =
-            applyRightCompanion(substitutionInstance, right)
+    fun applyRight(substitutionInstance: SubstitutionInstance, right: ExpressionNode = this.right.children[0], topNodeId: Int = -1) =
+            applyRightCompanion(substitutionInstance, right)?.apply {
+                resetNodeIds()
+                nodeId = topNodeId
+            }
 
     fun checkAndApply(expressionNode: ExpressionNode): ExpressionNode? {
         val substitutionInstance = checkLeftCondition(expressionNode)
         if (substitutionInstance.isApplicable)
-            return applyRight(substitutionInstance)
+            return applyRight(substitutionInstance, topNodeId = expressionNode.nodeId)
         else
             return null
     }

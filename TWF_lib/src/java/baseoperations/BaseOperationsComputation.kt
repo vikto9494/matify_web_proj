@@ -3,6 +3,8 @@ package baseoperations
 import expressiontree.ExpressionNode
 import numbers.Complex
 import numbers.toComplex
+import optimizerutils.CompressedNode
+import optimizerutils.CompressedNodeDouble
 import platformdependent.defaultRandom
 import standartlibextensions.abs
 
