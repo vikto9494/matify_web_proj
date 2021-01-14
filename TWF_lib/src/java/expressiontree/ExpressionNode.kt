@@ -205,7 +205,7 @@ data class ExpressionNode(
                     }
                 }
             }
-            if (children[i].value == "-" && value != "+") {
+            if (children.isNotEmpty() && children[i].value == "-" && value != "+") {
                 val plusParent = ExpressionNode(
                         NodeType.FUNCTION,
                         "+",
@@ -683,8 +683,10 @@ data class ExpressionNode(
     }
 
     fun listWhichParentsFunctionIs(topOperation: String): List<ExpressionNode> {
-        if (value != topOperation) {
-            return if (children.isEmpty()) listOf(linkOnOriginalTreeNode!!) else emptyList()
+        if (children.isEmpty()) {
+            return listOf(linkOnOriginalTreeNode!!)
+        } else if (value != topOperation) {
+            return emptyList()
         } else {
             val result = mutableListOf<ExpressionNode>()
             for (child in children) {
@@ -1105,7 +1107,7 @@ class ExpressionNodeConstructor(
             }
             return newNode
         } else {
-            val notDigitVariableSymbolIndex = identifier.indexOfFirst { !it.isNameOrNaturalNumberPart()}
+            val notDigitVariableSymbolIndex = identifier.indexOfFirst { !it.isNameOrNumberPart()}
             if (notDigitVariableSymbolIndex >= 0) {
                 return ExpressionNode(NodeType.ERROR, value = "Wrong variable symbol '${identifier[notDigitVariableSymbolIndex]}'", startPosition = startPosition + notDigitVariableSymbolIndex, endPosition = startPosition + notDigitVariableSymbolIndex + 1)
             }
