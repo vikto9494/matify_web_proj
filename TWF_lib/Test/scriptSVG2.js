@@ -54,7 +54,7 @@ function initTestingGround(test_expr, font_size) {
     app.viewbox(0, 0, background_width, background_height);
     app.rect(background_width, background_height).fill(background_colour);
 
-    let NewTreeRoot = TWF_lib.structureStringToExpression(test_expr);
+    let NewTreeRoot = this['twf-kotlin-lib'].structureStringToExpression(test_expr);
     let expr = PrintTree(NewTreeRoot, font_size, app);
     expr.move(0, 100);
 }
@@ -409,8 +409,8 @@ function PrintTree(TWF_v, init_font_size, app) {
 
         let arr = []
         if (multiArr.length !== 0) {
-            arr = TWF_lib.findApplicableSubstitutionsInSelectedPlace(
-                TWF_lib.structureStringToExpression(level),
+            arr = this['twf-kotlin-lib'].findApplicableSubstitutionsInSelectedPlace(
+                this['twf-kotlin-lib'].structureStringToExpression(level),
                 multiArr,
                 compiledConfiguration, true, true).toArray();
         }

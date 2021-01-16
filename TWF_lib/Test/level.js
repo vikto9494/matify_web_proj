@@ -1,4 +1,3 @@
-
 const topButtonsLineHeight = 80;
 const paddingFromTopButtonsLine = 80;
 const centralExpressionSize = 80;
@@ -25,22 +24,22 @@ let width_inner_cont = substitutionAreaWidth / 8 * 8;
 const originalExpression = "(+(2;+(2;*(4;5))))";
 const endExpression = "(24)";
 
-compiledConfiguration = TWF_lib.createCompiledConfigurationFromExpressionSubstitutionsAndParams(
-    [TWF_lib.expressionSubstitutionFromStructureStrings("(+(a;b))", "(+(b;a))"),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "NumberPlusMinus1", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "DecimalToFraction", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "PowFactorization", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MultiplicationFactorization", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "OpeningBrackets", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ParentBracketsExpansion", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ArgumentsSwap", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ArgumentsPermutationInOther", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ReduceArithmetic", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ReduceFraction", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "AdditiveComplicatingExtension", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MultiplicativeComplicatingExtension", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MinusInOutBrackets", void 0, void 0),
-            TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "SimpleComputation", void 0, void 0)])
+compiledConfiguration = this['twf-kotlin-lib'].createCompiledConfigurationFromExpressionSubstitutionsAndParams(
+    [this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings("(+(a;b))", "(+(b;a))"),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "NumberPlusMinus1", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "DecimalToFraction", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "PowFactorization", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MultiplicationFactorization", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "OpeningBrackets", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ParentBracketsExpansion", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ArgumentsSwap", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ArgumentsPermutationInOther", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ReduceArithmetic", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "ReduceFraction", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "AdditiveComplicatingExtension", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MultiplicativeComplicatingExtension", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MinusInOutBrackets", void 0, void 0),
+            this['twf-kotlin-lib'].expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "SimpleComputation", void 0, void 0)])
 
 
 let app = new SVG().addTo('body').size(window.innerWidth, window.innerHeight);
@@ -54,7 +53,7 @@ function StartLevel(originalExpression)
         app.viewbox(0, 0, window.innerWidth, window.innerHeight);
         app.rect(window.innerWidth, window.innerHeight).fill(backgroundColour);
 
-        let NewTreeRoot = TWF_lib.structureStringToExpression(originalExpression);
+        let NewTreeRoot = this['twf-kotlin-lib'].structureStringToExpression(originalExpression);
         expr = PrintTree(NewTreeRoot, centralExpressionSize, app);
         expr.center((window.innerWidth) / 2, topButtonsLineHeight + paddingFromTopButtonsLine + centralExpressionSize / 2);
 }
@@ -101,7 +100,7 @@ function PrintSubstitutions(listOfValues, arrSubs) {
                 let curCont = draw.group();
 
                 let actualShiftX = substitutionAreaInternalPadding + substitutionAreaX;
-                let lolkek = (PlainPrintTree(TWF_lib.structureStringToExpression(listOfValues[i][0]), substitutionSize, curCont)).x(actualShiftX).y(heighContOfConts);
+                let lolkek = (PlainPrintTree(this['twf-kotlin-lib'].structureStringToExpression(listOfValues[i][0]), substitutionSize, curCont)).x(actualShiftX).y(heighContOfConts);
                 actualShiftX += substitutionPaddingBetweenParts;
 
                 let tmpWidth = curCont.width();
@@ -115,7 +114,7 @@ function PrintSubstitutions(listOfValues, arrSubs) {
                 actualShiftX += substitutionPaddingBetweenParts;
                 tmpWidth = curCont.width();
 
-                let abs = (PlainPrintTree(TWF_lib.structureStringToExpression(listOfValues[i][1]), substitutionSize, curCont)).x(actualShiftX + tmpWidth).y(heighContOfConts);
+                let abs = (PlainPrintTree(this['twf-kotlin-lib'].structureStringToExpression(listOfValues[i][1]), substitutionSize, curCont)).x(actualShiftX + tmpWidth).y(heighContOfConts);
 
                 lolkek.center(lolkek.x() + lolkek.width() / 2, heighContOfConts + abs.height() / 2);
                 arrowRight.y(lolkek.y())
