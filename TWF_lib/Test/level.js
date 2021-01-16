@@ -42,7 +42,6 @@ compiledConfiguration = TWF_lib.createCompiledConfigurationFromExpressionSubstit
             TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "MinusInOutBrackets", void 0, void 0),
             TWF_lib.expressionSubstitutionFromStructureStrings(void 0, void 0, void 0, void 0, void 0, void 0, void 0, "SimpleComputation", void 0, void 0)])
 
-init(compiledConfiguration, originalExpression, PrintSubstitutions, false, []);
 
 let app = new SVG().addTo('body').size(window.innerWidth, window.innerHeight);
 
@@ -51,6 +50,7 @@ StartLevel(originalExpression);
 
 function StartLevel(originalExpression)
 {
+        init(compiledConfiguration, originalExpression, PrintSubstitutions, false, []);
         app.viewbox(0, 0, window.innerWidth, window.innerHeight);
         app.rect(window.innerWidth, window.innerHeight).fill(backgroundColour);
 

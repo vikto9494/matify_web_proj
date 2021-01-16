@@ -64,7 +64,7 @@ function MakeNode(node, app) {
     this.children = [];
     this.add = function (child_node) {
         this.children.push(child_node);
-    }
+    };
     this.cont = app.group();
     this.twfNode = node;
     this.cont.addClass("uncolored");
@@ -405,6 +405,7 @@ function PrintTree(TWF_v, init_font_size, app) {
             recolor(multiArr.length - 1);
             */
         }
+        console.log(multiArr);
 
         let arr = []
         if (multiArr.length !== 0) {
