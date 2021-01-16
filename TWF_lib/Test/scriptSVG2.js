@@ -38,14 +38,14 @@ function changeMultipleFlag(x) {
 function init(_compiledConfiguration, _level, _MakeMenu, _flag) {
     compiledConfiguration = _compiledConfiguration;
     level = _level;
-    MakeMenu = _MakeMenu;
     multiFlag = _flag;
+    MakeMenu = _MakeMenu
     multiArr = [];
     multiArrCont = [];
 }
 
 function initTestingGround(test_expr, font_size) {
-    const background_colour = "#1F1F1F";
+    const background_colour = backgroundColour;
     const background_width = 800;
     const background_height = 800;
 
@@ -78,10 +78,10 @@ function MakeTree(node, app) {
     return cur_node;
 }
 
-const default_text_color = "#CCCCCC";
+const default_text_color = "#254b25";
 
 function getColor(n) {
-    let color = new SVG.Color("#448fff").to("#ff0000");
+    let color = new SVG.Color("#448fff").to("#1111ff");
     return color.at(2 / (n + 2)).toHex();
 }
 
@@ -408,10 +408,10 @@ function PrintTree(TWF_v, init_font_size, app) {
 
         let arr = []
         if (multiArr.length !== 0) {
-            arr = (TWF_lib.findApplicableSubstitutionsInSelectedPlace(
+            arr = TWF_lib.findApplicableSubstitutionsInSelectedPlace(
                 TWF_lib.structureStringToExpression(level),
                 multiArr,
-                compiledConfiguration)).toArray();
+                compiledConfiguration, true, true).toArray();
         }
         let new_arr = []
         for (let i = 0; i < arr.length; i++) {
